@@ -53,6 +53,7 @@ import org.oscim.layers.vector.PathLayer;
 import org.oscim.layers.vector.geometries.Style;
 import org.oscim.theme.VtmThemes;
 import org.oscim.tiling.source.mapfile.MapFileTileSource;
+import org.oscim.tiling.source.mapfile.MapInfo;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -349,7 +350,7 @@ public class MainActivity extends Activity {
         }.execute();
     }
 
-    void loadMap(File areaFolder) {
+    void  loadMap(File areaFolder) {
         logUser("loading map");
 
         // Map events receiver
@@ -367,13 +368,16 @@ public class MainActivity extends Activity {
         itemizedLayer = new ItemizedLayer<>(mapView.map(), (MarkerSymbol) null);
         mapView.map().layers().add(itemizedLayer);
 
-        // Map position
-        GeoPoint mapCenter = tileSource.getMapInfo().boundingBox.getCenterPoint();
-        mapView.map().setMapPosition(mapCenter.getLatitude(), mapCenter.getLongitude(), 1 << 15);
-
-        setContentView(mapView);
-        loadGraphStorage();
-    }
+    // Map position
+    GeoPoint mapCenter = tileSource.getMapInfo().boundingBox.getCenterPoint();
+    MapInfo m = tileSource.getMapInfo();
+    Double lat = mapCenter.getLatitude();
+    Double lng = mapCenter.getLongitude();
+        mapView.map().setMapPosition(mapCenter.getLatitude()
+                , mapCenter.getLongitude(), 1 << 15);
+    setContentView(mapView);
+    loadGraphStorage();
+}
 
     void loadGraphStorage() {
         logUser("loading graph (" + Constants.VERSION + ") ... ");
