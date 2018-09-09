@@ -4,6 +4,8 @@ import com.codahale.metrics.annotation.Timed;
 import control.PersonControl;
 import io.dropwizard.hibernate.UnitOfWork;
 import model.entity.Edge;
+import model.entity.Rating;
+import model.response.Response;
 import model.response.ResponseRegister;
 import model.person.Account;
 import model.person.Fullname;
@@ -100,7 +102,7 @@ public class PersonAPI {
     @GET
     @UnitOfWork
     @Path("device/getAll")
-    public List<Fullname> getAllDevice() {
+    public List getAllDevice() {
         return personControl.getAllDevices();
     }
 
@@ -110,5 +112,13 @@ public class PersonAPI {
     @UnitOfWork
     public ResponseRegister insertEdge(Edge edge){
         return personControl.insertEdge(edge);
+    }
+
+    @POST
+    @Timed
+    @Path("/rating/insert")
+    @UnitOfWork
+    public Response insertRating(Rating rating){
+        return personControl.insertRating(rating);
     }
 }

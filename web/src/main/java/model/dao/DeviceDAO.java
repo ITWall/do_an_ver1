@@ -21,7 +21,8 @@ public class DeviceDAO extends AbstractDAO<Device> {
 
     public List getAllDevices() {
         StoredProcedureQuery spInsertDevice = this.currentSession().createNamedStoredProcedureQuery("getAllDevices");
-        return spInsertDevice.getResultList();
+        List l = spInsertDevice.getResultList();
+        return l;
     }
 }
 

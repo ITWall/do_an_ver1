@@ -50,6 +50,8 @@ import model.TimerManagement;
 import model.dao.*;
 import model.entity.Device;
 import model.entity.Edge;
+import model.entity.Place;
+import model.entity.Rating;
 import model.person.Account;
 import model.person.Fullname;
 import model.person.Person;
@@ -109,7 +111,7 @@ public final class GraphHopperApplication extends Application<GraphHopperServerC
      */
     private final HibernateBundle<GraphHopperServerConfiguration> hibernateBundle
             = new HibernateBundle<GraphHopperServerConfiguration>(
-            Status.class, Fullname.class, Account.class, Person.class, Device.class, Edge.class
+            Status.class, Fullname.class, Account.class, Person.class, Device.class, Edge.class, Place.class, Rating.class
     ) {
         @Override
         public DataSourceFactory getDataSourceFactory(
@@ -138,7 +140,9 @@ public final class GraphHopperApplication extends Application<GraphHopperServerC
                 = new DeviceDAO(hibernateBundle.getSessionFactory());
         final EdgeDAO edgeDAO
                 = new EdgeDAO(hibernateBundle.getSessionFactory());
-        PersonControl personControl = new PersonControl(fullnameDAO, statusDAO, accountDAO, personDAO, deviceDAO, edgeDAO);
+        final RatingDAO ratingDAO
+                = new RatingDAO(hibernateBundle.getSessionFactory());
+        PersonControl personControl = new PersonControl(fullnameDAO, statusDAO, accountDAO, personDAO, deviceDAO, edgeDAO, ratingDAO);
         environment.jersey().register(new PersonAPI(personControl));
     }
 }

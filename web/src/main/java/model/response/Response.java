@@ -2,7 +2,7 @@ package model.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class ResponseReport {
+public class Response {
     private int code;
     private String message;
 

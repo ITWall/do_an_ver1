@@ -8,7 +8,7 @@ import com.graphhopper.routing.util.FlagEncoder;
 import com.graphhopper.storage.index.QueryResult;
 import com.graphhopper.util.EdgeIteratorState;
 import model.Report;
-import model.response.ResponseReport;
+import model.response.Response;
 import model.TimerManagement;
 
 import java.util.*;
@@ -17,8 +17,8 @@ public class ReportControl {
     private int delay = 0;
     private int period = 1000;
 
-    public ResponseReport receiveReport(Report report){
-        ResponseReport resultReport = new ResponseReport();
+    public Response receiveReport(Report report){
+        Response resultReport = new Response();
         QueryResult qrReport = GraphHopperApplication.graphHopper.getLocationIndex().findClosest(report.getLatLng().getLatitude(), report.getLatLng().getLongitude(),EdgeFilter.ALL_EDGES);
         if(!qrReport.isValid()){
             resultReport.setCode(101);

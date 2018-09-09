@@ -3,7 +3,7 @@ package com.graphhopper.http.resources;
 import com.codahale.metrics.annotation.Timed;
 import control.ReportControl;
 import model.Report;
-import model.response.ResponseReport;
+import model.response.Response;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -15,7 +15,7 @@ public class ReportAPI {
     @POST
     @Timed
     @Path("/location")
-    public ResponseReport searchPath(Report report){
+    public Response searchPath(Report report){
         ReportControl reportControl = new ReportControl();
         return reportControl.receiveReport(report);
     }

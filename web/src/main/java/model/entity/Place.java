@@ -1,7 +1,5 @@
 package model.entity;
 
-import model.person.Status;
-
 import javax.persistence.*;
 
 @Entity

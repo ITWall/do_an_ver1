@@ -6,7 +6,7 @@ import javax.persistence.*;
 @Entity
 @Table(name = "rating")
 @NamedStoredProcedureQueries({
-        @NamedStoredProcedureQuery(name = "inserRating",
+        @NamedStoredProcedureQuery(name = "insertRating",
                 procedureName = "insertRating",
                 parameters = {
                         @StoredProcedureParameter(name = "deviceID", mode = ParameterMode.IN, type = Integer.class),
@@ -20,7 +20,7 @@ import javax.persistence.*;
                         @StoredProcedureParameter(name = "speed", mode = ParameterMode.IN, type = Double.class),
                         @StoredProcedureParameter(name = "polyline", mode = ParameterMode.IN, type = String.class),
                         @StoredProcedureParameter(name = "trafficStatus", mode = ParameterMode.IN, type = Integer.class),
-                        @StoredProcedureParameter(name = "time", mode = ParameterMode.IN, type = Long.class),
+                        @StoredProcedureParameter(name = "time", mode = ParameterMode.IN, type = String.class),
                         @StoredProcedureParameter(name = "status", mode = ParameterMode.IN, type = Integer.class),
                 },
                 resultClasses = Rating.class)
@@ -31,7 +31,7 @@ public class Rating {
     private int id;
 
     @Column(name = "Time")
-    private long time;
+    private String time;
 
     @Column(name = "Status")
     private int status;
@@ -50,7 +50,7 @@ public class Rating {
     public Rating() {
     }
 
-    public Rating(long time, int status, int trafficStatus, Place place, Device device) {
+    public Rating(String time, int status, int trafficStatus, Place place, Device device) {
         this.time = time;
         this.status = status;
         this.trafficStatus = trafficStatus;
@@ -66,11 +66,11 @@ public class Rating {
         this.id = id;
     }
 
-    public long getTime() {
+    public String getTime() {
         return time;
     }
 
-    public void setTime(long time) {
+    public void setTime(String time) {
         this.time = time;
     }
 
