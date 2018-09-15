@@ -1,6 +1,7 @@
 package model.entity;
 
 import javax.persistence.*;
+import java.util.List;
 
 @Entity
 @Table(name = "place")
@@ -18,18 +19,24 @@ public class Place {
     @Column(name = "Longitude")
     private double longitude;
 
-    @JoinColumn(name = "EdgeID", referencedColumnName = "ID", nullable = false)
-    @ManyToOne
-    private Edge edge;
+    //    @JoinColumn(name = "EdgeID", referencedColumnName = "ID", nullable = false)
+//    @ManyToOne
+    @ManyToMany(cascade = {CascadeType.ALL})
+    @JoinTable(
+            name = "place_edge",
+            joinColumns = {@JoinColumn(name = "placeID")},
+            inverseJoinColumns = {@JoinColumn(name = "edgeID")}
+    )
+    private List<Edge> edges;
 
     public Place() {
     }
 
-    public Place(String name, double latitude, double longitude, Edge edge) {
+    public Place(String name, double latitude, double longitude, List<Edge> edges) {
         this.name = name;
         this.latitude = latitude;
         this.longitude = longitude;
-        this.edge = edge;
+        this.edges = edges;
     }
 
     public int getId() {
@@ -64,11 +71,11 @@ public class Place {
         this.longitude = longitude;
     }
 
-    public Edge getEdge() {
-        return edge;
+    public List<Edge> getEdges() {
+        return edges;
     }
 
-    public void setEdge(Edge edge) {
-        this.edge = edge;
+    public void setEdges(List<Edge> edges) {
+        this.edges = edges;
     }
 }

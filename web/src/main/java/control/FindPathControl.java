@@ -150,10 +150,10 @@ public class FindPathControl {
             instruction.setTime(altResponse.getTime());
             PointList pointList = altResponse.getPoints();
             for(int i=0; i<pointList.getSize(); i++){
-                System.out.println("coordinateList.add(new LatLong(" + pointList.getLat(i)+ ", "+ pointList.getLon(i)+"));");
+//                System.out.println("coordinateList.add(new LatLong(" + pointList.getLat(i)+ ", "+ pointList.getLon(i)+"));");
 //                System.out.println(pointList.getLat(i) + ", " + pointList.getLon(i));
             }
-            System.out.println("==============================");
+//            System.out.println("==============================");
             instruction.setPolyline(PolylineManager.encodePolyline(altResponse.getPoints()));
 //            System.out.println("distance sdfsadf: " + PolylineManager.encodePolyline(altResponse.getPoints()));
 //            System.out.println(altResponse.getPoints());

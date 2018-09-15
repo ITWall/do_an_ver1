@@ -13,17 +13,17 @@ import javax.persistence.*;
                         @StoredProcedureParameter(name = "name", mode = ParameterMode.IN, type = String.class),
                         @StoredProcedureParameter(name = "latitude", mode = ParameterMode.IN, type = Double.class),
                         @StoredProcedureParameter(name = "longitude", mode = ParameterMode.IN, type = Double.class),
-                        @StoredProcedureParameter(name = "edgeID", mode = ParameterMode.IN, type = Integer.class),
-                        @StoredProcedureParameter(name = "baseNode", mode = ParameterMode.IN, type = Integer.class),
-                        @StoredProcedureParameter(name = "adjustNode", mode = ParameterMode.IN, type = Integer.class),
-                        @StoredProcedureParameter(name = "distance", mode = ParameterMode.IN, type = Double.class),
-                        @StoredProcedureParameter(name = "speed", mode = ParameterMode.IN, type = Double.class),
-                        @StoredProcedureParameter(name = "polyline", mode = ParameterMode.IN, type = String.class),
                         @StoredProcedureParameter(name = "trafficStatus", mode = ParameterMode.IN, type = Integer.class),
                         @StoredProcedureParameter(name = "time", mode = ParameterMode.IN, type = String.class),
                         @StoredProcedureParameter(name = "status", mode = ParameterMode.IN, type = Integer.class),
                 },
-                resultClasses = Rating.class)
+                resultClasses = Rating.class),
+        @NamedStoredProcedureQuery(name = "insertPlaceEdge",
+                procedureName = "insertPlaceEdge",
+                parameters = {
+                        @StoredProcedureParameter(name = "placeID", mode = ParameterMode.IN, type = Integer.class),
+                        @StoredProcedureParameter(name = "edgeID", mode = ParameterMode.IN, type = Integer.class)
+                })
 })
 public class Rating {
     @Id

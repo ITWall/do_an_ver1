@@ -26,7 +26,7 @@ import model.person.Status;
 
 import java.util.*;
 
-public class PersonControl {
+public class RatingControl {
     private FullnameDAO fullnameDAO;
     private StatusDAO statusDAO;
     private AccountDAO accountDAO;
@@ -38,11 +38,11 @@ public class PersonControl {
     private static final int DELAY = 0;
     private static final int PERIOD = 1000;
 
-    public PersonControl() {
+    public RatingControl() {
 
     }
 
-    public PersonControl(FullnameDAO fullnameDAO, StatusDAO statusDAO, AccountDAO accountDAO, PersonDAO personDAO, DeviceDAO deviceDAO, EdgeDAO edgeDAO, RatingDAO ratingDAO) {
+    public RatingControl(FullnameDAO fullnameDAO, StatusDAO statusDAO, AccountDAO accountDAO, PersonDAO personDAO, DeviceDAO deviceDAO, EdgeDAO edgeDAO, RatingDAO ratingDAO) {
         this.fullnameDAO = fullnameDAO;
         this.statusDAO = statusDAO;
         this.accountDAO = accountDAO;
@@ -171,52 +171,63 @@ public class PersonControl {
         if(!queryResult.isValid()){
             return null;
         } else {
-            EdgeIteratorState edge = queryResult.getClosestEdge();
-            long existingFlags = edge.getFlags();
-            rating.getPlace().getEdge().setId(edge.getEdge());
-            rating.getPlace().getEdge().setAdjustNode(edge.getAdjNode());
-            rating.getPlace().getEdge().setBaseNode(edge.getBaseNode());
-            rating.getPlace().getEdge().setDistance(edge.getDistance());
-            //save speed
-            GraphHopperApplication.hashMapSpeed.put(edge.getEdge(), encoder.getSpeed(existingFlags));
-            // set speed
+            EdgeIteratorState edgeIteratorState = queryResult.getClosestEdge();
+            long existingFlags = edgeIteratorState.getFlags();
+            EdgeIterator iterBase = GraphHopperApplication.edgeExplorer.setBaseNode(queryResult.getClosestNode());
+            List<Edge> edges = new ArrayList<>();
+            int count = 0;
+            while (iterBase.next()){
+                count++;
+                Edge edge = new Edge();
+                edge.setId(iterBase.getEdge());
+                edge.setAdjustNode(iterBase.getAdjNode());
+                edge.setBaseNode(iterBase.getBaseNode());
+                edge.setDistance(iterBase.getDistance());
+                if(count == 1) {
+                    //save speed
+                    GraphHopperApplication.hashMapSpeed.put(iterBase.getEdge(), encoder.getSpeed(existingFlags));
+                    // set speed
 //        edge.setFlags(encoder.setSpeed(existingFlags, encoder.getSpeed(existingFlags)/8/report.getLevel()));
-            switch (rating.getTrafficStatus()){
-                case 1:
-                    edge.setFlags(encoder.setSpeed(existingFlags, 20));
-                    rating.getPlace().getEdge().setSpeed(20);
-                    break;
-                case 2:
-                    edge.setFlags(encoder.setSpeed(existingFlags, 10));
-                    rating.getPlace().getEdge().setSpeed(10);
-                    break;
-                case 3:
-                    edge.setFlags(encoder.setSpeed(existingFlags, 5));
-                    rating.getPlace().getEdge().setSpeed(5);
-                    break;
-                case 4:
-                    edge.setFlags(encoder.setSpeed(existingFlags, 0));
-                    rating.getPlace().getEdge().setSpeed(0);
-                    break;
-            }
-            System.out.println(encoder.getSpeed(edge.getFlags()));
-            TimerManagement timerManagement = new TimerManagement(new Timer());
-            timerManagement.getTimer().scheduleAtFixedRate(new TimerTask() {
-                @Override
-                public void run() {
-                    timerManagement.setInterval(timerManagement.getInterval()-1);
-                    if(timerManagement.getInterval() == 0){
-                        edge.setFlags(encoder.setSpeed(existingFlags, GraphHopperApplication.hashMapSpeed.get(edge.getEdge())));
-                        System.out.println(encoder.getSpeed(edge.getFlags()));
-                        GraphHopperApplication.hashMapSpeed.remove(edge.getEdge());
-                        timerManagement.getTimer().cancel();
-                        GraphHopperApplication.hashMapDelay.remove(getKeyFromValue(GraphHopperApplication.hashMapDelay, timerManagement));
-                        System.out.println("hashmap_size: " + GraphHopperApplication.hashMapDelay.size());
+                    switch (rating.getTrafficStatus()){
+                        case 1:
+                            edgeIteratorState.setFlags(encoder.setSpeed(existingFlags, 20));
+                            edge.setSpeed(20);
+                            break;
+                        case 2:
+                            edgeIteratorState.setFlags(encoder.setSpeed(existingFlags, 10));
+                            edge.setSpeed(10);
+                            break;
+                        case 3:
+                            edgeIteratorState.setFlags(encoder.setSpeed(existingFlags, 5));
+                            edge.setSpeed(5);
+                            break;
+                        case 4:
+                            edgeIteratorState.setFlags(encoder.setSpeed(existingFlags, 0));
+                            edge.setSpeed(0);
+                            break;
                     }
+                    System.out.println(encoder.getSpeed(edgeIteratorState.getFlags()));
+                    TimerManagement timerManagement = new TimerManagement(new Timer());
+                    timerManagement.getTimer().scheduleAtFixedRate(new TimerTask() {
+                        @Override
+                        public void run() {
+                            timerManagement.setInterval(timerManagement.getInterval()-1);
+                            if(timerManagement.getInterval() == 0){
+                                edgeIteratorState.setFlags(encoder.setSpeed(existingFlags, GraphHopperApplication.hashMapSpeed.get(edgeIteratorState.getEdge())));
+                                System.out.println(encoder.getSpeed(edgeIteratorState.getFlags()));
+                                GraphHopperApplication.hashMapSpeed.remove(edgeIteratorState.getEdge());
+                                timerManagement.getTimer().cancel();
+                                GraphHopperApplication.hashMapDelay.remove(getKeyFromValue(GraphHopperApplication.hashMapDelay, timerManagement));
+                                System.out.println("hashmap_size: " + GraphHopperApplication.hashMapDelay.size());
+                            }
+                        }
+                    }, DELAY, PERIOD);
+                    GraphHopperApplication.hashMapDelay.put(edgeIteratorState.getEdge(), timerManagement);
                 }
-            }, DELAY, PERIOD);
-            GraphHopperApplication.hashMapDelay.put(edge.getEdge(), timerManagement);
-            rating.getPlace().getEdge().setPolyline(getPolylineBetween2Nodes(edge.getBaseNode(), edge.getAdjNode()));
+                edge.setPolyline(getPolylineBetween2Nodes(iterBase.getBaseNode(), iterBase.getAdjNode()));
+                edges.add(edge);
+            }
+            rating.getPlace().setEdges(edges);
         }
         return rating;
     }
@@ -238,5 +249,16 @@ public class PersonControl {
 //        List<Path> paths = alternativeRoute.calcPaths(baseNode, adjNode);
         Path path = new Dijkstra(graph, new FastestWeighting(encoder), TraversalMode.EDGE_BASED_2DIR).calcPath(baseNode, adjNode);
         return PolylineManager.encodePolyline(path.calcPoints());
+    }
+
+    public Response insertEdge(Rating rating) {
+        rating = setupRating(rating);
+        if(rating == null) {
+            Response response = new Response();
+            response.setCode(500);
+            response.setMessage("Failed");
+            return response;
+        }
+        return ratingDAO.insertAllEdges(rating);
     }
 }

@@ -17,29 +17,19 @@
  */
 package com.graphhopper.http;
 
-import com.graphhopper.GHRequest;
-import com.graphhopper.GHResponse;
 import com.graphhopper.GraphHopper;
-import com.graphhopper.PathWrapper;
 import com.graphhopper.http.cli.ImportCommand;
-import com.graphhopper.http.resources.FindPathsAPI;
-import com.graphhopper.http.resources.PersonAPI;
-import com.graphhopper.http.resources.ReportAPI;
-import com.graphhopper.http.resources.RootResource;
-import com.graphhopper.reader.osm.OSMFileHeader;
-import com.graphhopper.reader.osm.OSMReader;
+import com.graphhopper.http.resources.*;
 import com.graphhopper.routing.AlternativeRoute;
-import com.graphhopper.routing.Dijkstra;
 import com.graphhopper.routing.Path;
-import com.graphhopper.routing.QueryGraph;
 import com.graphhopper.routing.util.*;
 import com.graphhopper.routing.weighting.ShortestWeighting;
 import com.graphhopper.storage.*;
 import com.graphhopper.storage.index.LocationIndex;
 import com.graphhopper.storage.index.LocationIndexTree;
 import com.graphhopper.storage.index.QueryResult;
-import com.graphhopper.util.Parameters;
-import control.PersonControl;
+import com.graphhopper.util.EdgeExplorer;
+import control.RatingControl;
 import io.dropwizard.Application;
 import io.dropwizard.bundles.assets.ConfiguredAssetsBundle;
 import io.dropwizard.db.DataSourceFactory;
@@ -48,25 +38,20 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import model.TimerManagement;
 import model.dao.*;
-import model.entity.Device;
-import model.entity.Edge;
-import model.entity.Place;
-import model.entity.Rating;
+import model.entity.*;
 import model.person.Account;
 import model.person.Fullname;
 import model.person.Person;
 import model.person.Status;
 
-import javax.servlet.DispatcherType;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 
 public final class GraphHopperApplication extends Application<GraphHopperServerConfiguration> {
     public static HashMap<Integer, TimerManagement> hashMapDelay = new HashMap<>();
     public static HashMap<Integer, Double> hashMapSpeed = new HashMap<>();
     public static GraphHopper graphHopper;
+    public static EdgeExplorer edgeExplorer;
     public static void main(String[] args) throws Exception {
         new GraphHopperApplication().run(args);
 
@@ -84,6 +69,7 @@ public final class GraphHopperApplication extends Application<GraphHopperServerC
         LocationIndex index = new LocationIndexTree(graphBase, new RAMDirectory("E:\\graphhopper\\[asia_vietnam].osm-gh", true));
         if (!index.loadExisting())
             throw new IllegalStateException("location index cannot be loaded!");
+        edgeExplorer = graphBase.createEdgeExplorer(EdgeFilter.ALL_EDGES);
         QueryResult fromQR = index.findClosest(21.006018, 105.822773, EdgeFilter.ALL_EDGES);
         QueryResult toQR = index.findClosest(21.008743, 105.851526, EdgeFilter.ALL_EDGES);
 //        System.out.println(fromQR.getClosestNode() +" - " + toQR.getClosestNode());
@@ -128,6 +114,7 @@ public final class GraphHopperApplication extends Application<GraphHopperServerC
 //        environment.servlets().addFilter("ipfilter", new IPFilter(configuration.getGraphHopperConfiguration().get("jetty.whiteips", ""), configuration.getGraphHopperConfiguration().get("jetty.blackips", ""))).addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), false, "*");
         environment.jersey().register(new FindPathsAPI());
         environment.jersey().register(new ReportAPI());
+        environment.jersey().register(new PathAPI());
         final FullnameDAO fullnameDAO
                 = new FullnameDAO(hibernateBundle.getSessionFactory());
         final StatusDAO statusDAO
@@ -142,7 +129,7 @@ public final class GraphHopperApplication extends Application<GraphHopperServerC
                 = new EdgeDAO(hibernateBundle.getSessionFactory());
         final RatingDAO ratingDAO
                 = new RatingDAO(hibernateBundle.getSessionFactory());
-        PersonControl personControl = new PersonControl(fullnameDAO, statusDAO, accountDAO, personDAO, deviceDAO, edgeDAO, ratingDAO);
-        environment.jersey().register(new PersonAPI(personControl));
+        RatingControl ratingControl = new RatingControl(fullnameDAO, statusDAO, accountDAO, personDAO, deviceDAO, edgeDAO, ratingDAO);
+        environment.jersey().register(new MapAPI(ratingControl));
     }
 }
