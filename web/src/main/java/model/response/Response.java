@@ -23,4 +23,12 @@ public class Response {
     public void setMessage(String message) {
         this.message = message;
     }
+
+    public Response(int code, String message) {
+        this.code = code;
+        this.message = message;
+    }
+
+    public Response() {
+    }
 }

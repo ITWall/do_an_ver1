@@ -58,12 +58,12 @@ public class ReportControl {
                     System.out.println(encoder.getSpeed(edge.getFlags()));
                     GraphHopperApplication.hashMapSpeed.remove(edge.getEdge());
                     timerManagement.getTimer().cancel();
-                    GraphHopperApplication.hashMapDelay.remove(getKeyFromValue(GraphHopperApplication.hashMapDelay, timerManagement));
-                    System.out.println("hashmap_size: " + GraphHopperApplication.hashMapDelay.size());
+//                    GraphHopperApplication.hashMapDelay.remove(getKeyFromValue(GraphHopperApplication.hashMapDelay, timerManagement));
+//                    System.out.println("hashmap_size: " + GraphHopperApplication.hashMapDelay.size());
                 }
             }
         }, delay, period);
-        GraphHopperApplication.hashMapDelay.put(edge.getEdge(), timerManagement);
+//        GraphHopperApplication.hashMapDelay.put(edge.getEdge(), timerManagement);
         resultReport.setCode(200);
         resultReport.setMessage("Success");
         return resultReport;

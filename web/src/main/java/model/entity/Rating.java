@@ -23,6 +23,12 @@ import javax.persistence.*;
                 parameters = {
                         @StoredProcedureParameter(name = "placeID", mode = ParameterMode.IN, type = Integer.class),
                         @StoredProcedureParameter(name = "edgeID", mode = ParameterMode.IN, type = Integer.class)
+                }),
+        @NamedStoredProcedureQuery(name = "updateEdge",
+                procedureName = "updateEdge",
+                parameters = {
+                        @StoredProcedureParameter(name = "id", mode = ParameterMode.IN, type = Integer.class),
+                        @StoredProcedureParameter(name = "trafficStatus", mode = ParameterMode.IN, type = Integer.class)
                 })
 })
 public class Rating {

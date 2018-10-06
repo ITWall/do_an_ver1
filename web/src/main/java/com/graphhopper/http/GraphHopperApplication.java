@@ -44,12 +44,14 @@ import model.person.Fullname;
 import model.person.Person;
 import model.person.Status;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 public final class GraphHopperApplication extends Application<GraphHopperServerConfiguration> {
     public static HashMap<Integer, TimerManagement> hashMapDelay = new HashMap<>();
     public static HashMap<Integer, Double> hashMapSpeed = new HashMap<>();
+//    public static List<TimerManagement> listTimeManagement = new ArrayList<>();
     public static GraphHopper graphHopper;
     public static EdgeExplorer edgeExplorer;
     public static void main(String[] args) throws Exception {

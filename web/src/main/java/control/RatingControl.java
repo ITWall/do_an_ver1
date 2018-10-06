@@ -36,7 +36,9 @@ public class RatingControl {
     private RatingDAO ratingDAO;
 
     private static final int DELAY = 0;
-    private static final int PERIOD = 1000;
+    private static final int PERIOD = 300;
+
+    private List<Integer> listIDEdge;
 
     public RatingControl() {
 
@@ -84,158 +86,172 @@ public class RatingControl {
         this.personDAO = personDAO;
     }
 
-    public ResponseRegister register(Person person){
+    public ResponseRegister register(Person person) {
         ResponseRegister responseRegister = new ResponseRegister();
-        if(person != null){
+        if (person != null) {
 //            if(personDAO.insertPerson(person).getCode() == 200){
 //                responseRegister.setCode(200);
 //                responseRegister.setMessage("Cannot insert person to table");
 //            }
-            if(fullnameDAO.insertFullname(person.getFullname()).getCode() == 200){
+            if (fullnameDAO.insertFullname(person.getFullname()).getCode() == 200) {
                 List<Fullname> list = fullnameDAO.findByFirstnameAndLastname(person.getFullname().getFirstname(), person.getFullname().getLastname());
                 System.out.println("size_list: " + list.size());
                 person.setFullname(fullnameDAO.findByFirstnameAndLastname(person.getFullname().getFirstname(), person.getFullname().getLastname()).get(0));
                 person.getAccount().setStatus(statusDAO.findByName("OK").get(0));
-                if(getAccountDAO().insertAccount(person.getAccount()).getCode() == 200){
+                if (getAccountDAO().insertAccount(person.getAccount()).getCode() == 200) {
                     person.setAccount(getAccountDAO().findByEmailPassword(person.getAccount().getEmail(), person.getAccount().getPassword()).get(0));
-                    if(getPersonDAO().insertPerson(person).getCode() == 200){
+                    if (getPersonDAO().insertPerson(person).getCode() == 200) {
                         responseRegister.setCode(200);
                         responseRegister.setMessage("Insert person successfully");
                     }
-                }else{
+                } else {
                     responseRegister.setCode(500);
                     responseRegister.setMessage("Cannot insert account to table");
                 }
-            }else{
+            } else {
                 responseRegister.setCode(500);
                 responseRegister.setMessage("Cannot insert fullname to table");
             }
-        }else{
+        } else {
             responseRegister.setCode(100);
             responseRegister.setMessage("Person is null");
         }
         return responseRegister;
     }
 
-    public List<Fullname> findByName(String name){
+    public List<Fullname> findByName(String name) {
         return fullnameDAO.findByName(name);
     }
 
-    public List<Fullname> findAllName(){
+    public List<Fullname> findAllName() {
         return fullnameDAO.findAll();
     }
 
-    public List<Status> findByStatus(String status){
+    public List<Status> findByStatus(String status) {
         return statusDAO.findByName(status);
     }
 
-    public List<Status> findAllStatus(){
+    public List<Status> findAllStatus() {
         return statusDAO.findAll();
     }
 
-    public List<Account> findAllAccount(){
+    public List<Account> findAllAccount() {
         return accountDAO.findAll();
     }
 
-    public List<Person> findAllPerson(){
+    public List<Person> findAllPerson() {
         return personDAO.findAll();
     }
 
-    public List<Person> findByEmailPasswordPerson(String email, String password){
+    public List<Person> findByEmailPasswordPerson(String email, String password) {
         return personDAO.findByEmailPasswordAccount(email, password);
     }
 
-    public List getAllDevices(){
+    public List getAllDevices() {
         return deviceDAO.getAllDevices();
     }
 
-    public ResponseRegister insertEdge(Edge edge){
+    public ResponseRegister insertEdge(Edge edge) {
         return edgeDAO.insertEdge(edge);
     }
 
-    public Response insertRating(Rating rating){
+    public Response insertRating(Rating rating) {
         rating = setupRating(rating);
-        if(rating == null) {
+        if (rating == null) {
             Response response = new Response();
             response.setCode(500);
             response.setMessage("Failed");
             return response;
         }
         return ratingDAO.insertRating(rating);
+//        return new Response(200, "OK");
     }
 
     private Rating setupRating(Rating rating) {
+        listIDEdge = new ArrayList<>();
         FlagEncoder encoder = new CarFlagEncoder();
         EncodingManager em = new EncodingManager(encoder);
-        QueryResult queryResult = GraphHopperApplication.graphHopper.getLocationIndex().findClosest(rating.getPlace().getLatitude(), rating.getPlace().getLongitude(),EdgeFilter.ALL_EDGES);
-        if(!queryResult.isValid()){
+        QueryResult queryResult = GraphHopperApplication.graphHopper.getLocationIndex().findClosest(rating.getPlace().getLatitude(), rating.getPlace().getLongitude(), EdgeFilter.ALL_EDGES);
+        if (!queryResult.isValid()) {
             return null;
         } else {
             EdgeIteratorState edgeIteratorState = queryResult.getClosestEdge();
             long existingFlags = edgeIteratorState.getFlags();
             EdgeIterator iterBase = GraphHopperApplication.edgeExplorer.setBaseNode(queryResult.getClosestNode());
             List<Edge> edges = new ArrayList<>();
-            int count = 0;
-            while (iterBase.next()){
-                count++;
+            List<EdgeIterator> edgeIteratorList = new ArrayList<>();
+            while (iterBase.next()) {
+                edgeIteratorList.add(iterBase);
                 Edge edge = new Edge();
                 edge.setId(iterBase.getEdge());
                 edge.setAdjustNode(iterBase.getAdjNode());
                 edge.setBaseNode(iterBase.getBaseNode());
                 edge.setDistance(iterBase.getDistance());
-                if(count == 1) {
-                    //save speed
-                    GraphHopperApplication.hashMapSpeed.put(iterBase.getEdge(), encoder.getSpeed(existingFlags));
-                    // set speed
+                System.out.println(encoder.getSpeed(iterBase.getFlags()));
+                //save speed
+                GraphHopperApplication.hashMapSpeed.put(iterBase.getEdge(), encoder.getSpeed(iterBase.getFlags()));
+                // set speed
 //        edge.setFlags(encoder.setSpeed(existingFlags, encoder.getSpeed(existingFlags)/8/report.getLevel()));
-                    switch (rating.getTrafficStatus()){
-                        case 1:
-                            edgeIteratorState.setFlags(encoder.setSpeed(existingFlags, 20));
-                            edge.setSpeed(20);
-                            break;
-                        case 2:
-                            edgeIteratorState.setFlags(encoder.setSpeed(existingFlags, 10));
-                            edge.setSpeed(10);
-                            break;
-                        case 3:
-                            edgeIteratorState.setFlags(encoder.setSpeed(existingFlags, 5));
-                            edge.setSpeed(5);
-                            break;
-                        case 4:
-                            edgeIteratorState.setFlags(encoder.setSpeed(existingFlags, 0));
-                            edge.setSpeed(0);
-                            break;
-                    }
-                    System.out.println(encoder.getSpeed(edgeIteratorState.getFlags()));
-                    TimerManagement timerManagement = new TimerManagement(new Timer());
-                    timerManagement.getTimer().scheduleAtFixedRate(new TimerTask() {
-                        @Override
-                        public void run() {
-                            timerManagement.setInterval(timerManagement.getInterval()-1);
-                            if(timerManagement.getInterval() == 0){
-                                edgeIteratorState.setFlags(encoder.setSpeed(existingFlags, GraphHopperApplication.hashMapSpeed.get(edgeIteratorState.getEdge())));
-                                System.out.println(encoder.getSpeed(edgeIteratorState.getFlags()));
-                                GraphHopperApplication.hashMapSpeed.remove(edgeIteratorState.getEdge());
-                                timerManagement.getTimer().cancel();
-                                GraphHopperApplication.hashMapDelay.remove(getKeyFromValue(GraphHopperApplication.hashMapDelay, timerManagement));
-                                System.out.println("hashmap_size: " + GraphHopperApplication.hashMapDelay.size());
-                            }
-                        }
-                    }, DELAY, PERIOD);
-                    GraphHopperApplication.hashMapDelay.put(edgeIteratorState.getEdge(), timerManagement);
+                switch (rating.getTrafficStatus()) {
+                    case 1:
+                        iterBase.setFlags(encoder.setSpeed(existingFlags, 20));
+                        edge.setSpeed(20);
+                        break;
+                    case 2:
+                        iterBase.setFlags(encoder.setSpeed(existingFlags, 10));
+                        edge.setSpeed(10);
+                        break;
+                    case 3:
+                        iterBase.setFlags(encoder.setSpeed(existingFlags, 5));
+                        edge.setSpeed(5);
+                        break;
+                    case 4:
+                        iterBase.setFlags(encoder.setSpeed(existingFlags, 0));
+                        edge.setSpeed(0);
+                        break;
                 }
+                System.out.println(encoder.getSpeed(iterBase.getFlags()));
+                System.out.println("aaaaaaaaaa: " + iterBase.getEdge());
+                listIDEdge.add(iterBase.getEdge());
                 edge.setPolyline(getPolylineBetween2Nodes(iterBase.getBaseNode(), iterBase.getAdjNode()));
                 edges.add(edge);
+            }
+            for(int i=0; i<listIDEdge.size(); i++) {
+                TimerManagement timerManagement = new TimerManagement(new Timer());
+//                timerManagement = setupTimer(timerManagement, iterBase, encoder, existingFlags);
+                int finalI = i;
+                if(GraphHopperApplication.hashMapDelay.get(listIDEdge.get(finalI)) != null) {
+                    GraphHopperApplication.hashMapDelay.get(listIDEdge.get(finalI)).getTimer().cancel();
+                }
+                GraphHopperApplication.hashMapDelay.put(listIDEdge.get(finalI), timerManagement);
+//                if (GraphHopperApplication.hashMapDelay.get(listIDEdge.get(finalI))) lay ra roi remove. sau khi lay thi huy timer cua no
+
+                timerManagement.getTimer().scheduleAtFixedRate(new TimerTask() {
+                    @Override
+                    public void run() {
+                        timerManagement.setInterval(timerManagement.getInterval() - 1);
+                        System.out.println("id: " + listIDEdge.get(finalI) + " / time left: " + timerManagement.getInterval() + "\n");
+                        if (timerManagement.getInterval() == 0) {
+                            System.out.println("id: " + listIDEdge.get(finalI) + " finish!");
+                            timerManagement.getTimer().cancel();
+                            GraphHopperApplication.hashMapDelay.remove(getKeyFromValue(GraphHopperApplication.hashMapDelay, timerManagement));
+                            edgeIteratorList.get(finalI).setFlags(encoder.setSpeed(edgeIteratorList.get(finalI).getFlags(), GraphHopperApplication.hashMapSpeed.get(edgeIteratorList.get(finalI).getEdge())));
+                            ratingDAO.updateEdge(edges.get(finalI), 0);
+                            System.out.println(encoder.getSpeed(edgeIteratorList.get(finalI).getFlags()));
+                            GraphHopperApplication.hashMapSpeed.remove(listIDEdge.get(finalI));
+                        }
+                    }
+                }, DELAY, PERIOD);
             }
             rating.getPlace().setEdges(edges);
         }
         return rating;
     }
 
-    private Integer getKeyFromValue(HashMap<Integer, TimerManagement> hashMap, TimerManagement timerManagement){
+    private Integer getKeyFromValue(HashMap<Integer, TimerManagement> hashMap, TimerManagement timerManagement) {
         Set<Map.Entry<Integer, TimerManagement>> set = hashMap.entrySet();
-        for(Map.Entry<Integer, TimerManagement> entry: set){
-            if (timerManagement.equals(entry.getValue())){
+        for (Map.Entry<Integer, TimerManagement> entry : set) {
+            if (timerManagement.equals(entry.getValue())) {
                 return entry.getKey();
             }
         }
@@ -253,7 +269,7 @@ public class RatingControl {
 
     public Response insertEdge(Rating rating) {
         rating = setupRating(rating);
-        if(rating == null) {
+        if (rating == null) {
             Response response = new Response();
             response.setCode(500);
             response.setMessage("Failed");

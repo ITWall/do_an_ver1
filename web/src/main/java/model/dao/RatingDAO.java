@@ -5,14 +5,18 @@ import model.entity.Edge;
 import model.entity.Place;
 import model.entity.Rating;
 import model.response.Response;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.context.internal.ManagedSessionContext;
 
 import javax.persistence.StoredProcedureQuery;
 import java.util.List;
 
 public class RatingDAO extends AbstractDAO<Rating> {
+    private SessionFactory sessionFactory;
     public RatingDAO(SessionFactory sessionFactory) {
         super(sessionFactory);
+        this.sessionFactory = sessionFactory;
     }
 
     public Response insertRating(Rating rating) {
@@ -88,7 +92,6 @@ public class RatingDAO extends AbstractDAO<Rating> {
         int trafficStatus = rating.getTrafficStatus();
         for (Edge edge : rating.getPlace().getEdges()) {
             response = insertEdge(edge, trafficStatus);
-            trafficStatus = 0;
             if (response.getCode() == 500) {
                 return response;
             }
@@ -117,6 +120,32 @@ public class RatingDAO extends AbstractDAO<Rating> {
             response.setCode(500);
             response.setMessage("Failed");
             return response;
+        }
+
+        return response;
+    }
+
+    public Response updateEdge(Edge edge, int trafficStatus) {
+        Response response = new Response();
+        Session session = this.sessionFactory.openSession();
+        ManagedSessionContext.bind(session);
+        session.beginTransaction();
+        StoredProcedureQuery spInsertEdge = session.createNamedStoredProcedureQuery("updateEdge");
+        spInsertEdge.setParameter("id", edge.getId());
+        spInsertEdge.setParameter("trafficStatus", trafficStatus);
+        try {
+            spInsertEdge.executeUpdate();
+            session.getTransaction().commit();
+            response.setMessage("Success");
+            response.setCode(200);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.setCode(500);
+            response.setMessage("Failed");
+            session.getTransaction().commit();
+            return response;
+        } finally {
+            session.close();
         }
 
         return response;
