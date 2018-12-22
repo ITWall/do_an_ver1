@@ -17,16 +17,16 @@ import org.hibernate.annotations.NamedQuery;
 })
 public class Device {
     @Id
-    private int id;
+    private String id;
 
     @Column(name = "Warning")
     private int warning;
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -41,7 +41,7 @@ public class Device {
     public Device() {
     }
 
-    public Device(int id, int warning) {
+    public Device(String id, int warning) {
         this.id = id;
         this.warning = warning;
     }

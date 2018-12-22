@@ -24,19 +24,19 @@ import java.util.Locale;
 
 public class PathControl {
     private Graph graph;
-    private static final int MAX_PATH = 10;
+    private static final int MAX_PATH = 30;
 
     public PathControl() {
         graph = GraphHopperApplication.graphHopper.getGraphHopperStorage().getBaseGraph();
     }
 
-    public List<Path> findPath(Path path){
-        GHRequest req = new GHRequest(path.getStartLat(),path.getStartLon(), path.getEndLat(), path.getEndLon()).
+    public List<Path> findPath(Path pathRequest){
+        GHRequest req = new GHRequest(pathRequest.getStartLat(),pathRequest.getStartLon(), pathRequest.getEndLat(), pathRequest.getEndLon()).
                 setLocale(Locale.US);
         FlagEncoder encoder = new CarFlagEncoder();
         EncodingManager em = new EncodingManager(encoder);
-        QueryResult qrStart = GraphHopperApplication.graphHopper.getLocationIndex().findClosest(path.getStartLat(),path.getStartLon(), EdgeFilter.ALL_EDGES);
-        QueryResult qrEnd = GraphHopperApplication.graphHopper.getLocationIndex().findClosest(path.getEndLat(), path.getEndLon(), EdgeFilter.ALL_EDGES);
+        QueryResult qrStart = GraphHopperApplication.graphHopper.getLocationIndex().findClosest(pathRequest.getStartLat(),pathRequest.getStartLon(), EdgeFilter.ALL_EDGES);
+        QueryResult qrEnd = GraphHopperApplication.graphHopper.getLocationIndex().findClosest(pathRequest.getEndLat(), pathRequest.getEndLon(), EdgeFilter.ALL_EDGES);
         AlternativeRoute alternativeRoute = new AlternativeRoute(graph, new FastestWeighting(encoder), TraversalMode.EDGE_BASED_2DIR);
         alternativeRoute.setMaxPaths(MAX_PATH);
         List<com.graphhopper.routing.Path> paths = alternativeRoute.calcPaths(qrStart.getClosestNode(), qrEnd.getClosestNode());
@@ -60,13 +60,18 @@ public class PathControl {
             pathToMerge.add(pathFound);
             PathWrapper altResponse = new PathWrapper();
             pathMerger.doWork(altResponse, pathToMerge, tr);
+            Path path = new Path();
+            path.setStartLat(pathRequest.getStartLat());
+            path.setStartLon(pathRequest.getStartLon());
+            path.setEndLat(pathRequest.getEndLat());
+            path.setEndLon(pathRequest.getEndLon());
             path.setDistance(altResponse.getDistance());
             path.setMovingTime(altResponse.getTime());
-            PointList pointList = altResponse.getPoints();
-            for(int i=0; i<pointList.getSize(); i++){
+//            PointList pointList = altResponse.getPoints();
+//            for(int i=0; i<pointList.getSize(); i++){
 //                System.out.println("coordinateList.add(new LatLong(" + pointList.getLat(i)+ ", "+ pointList.getLon(i)+"));");
 //                System.out.println(pointList.getLat(i) + ", " + pointList.getLon(i));
-            }
+//            }
 //            System.out.println("==============================");
             path.setPolyline(PolylineManager.encodePolyline(altResponse.getPoints()));
             List<EdgeIteratorState> edgeIteratorStates = pathFound.calcEdges();
@@ -86,8 +91,8 @@ public class PathControl {
             path.setEdges(edges);
 //            System.out.println("distance sdfsadf: " + PolylineManager.encodePolyline(altResponse.getPoints()));
 //            System.out.println(altResponse.getPoints());
-            pathToMerge.clear();
             listPathFound.add(path);
+            pathToMerge.clear();
         }
         return listPathFound;
     }

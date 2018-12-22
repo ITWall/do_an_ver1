@@ -9,7 +9,7 @@ import javax.persistence.*;
         @NamedStoredProcedureQuery(name = "insertRating",
                 procedureName = "insertRating",
                 parameters = {
-                        @StoredProcedureParameter(name = "deviceID", mode = ParameterMode.IN, type = Integer.class),
+                        @StoredProcedureParameter(name = "deviceID", mode = ParameterMode.IN, type = String.class),
                         @StoredProcedureParameter(name = "name", mode = ParameterMode.IN, type = String.class),
                         @StoredProcedureParameter(name = "latitude", mode = ParameterMode.IN, type = Double.class),
                         @StoredProcedureParameter(name = "longitude", mode = ParameterMode.IN, type = Double.class),

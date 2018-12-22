@@ -36,7 +36,7 @@ public class RatingControl {
     private RatingDAO ratingDAO;
 
     private static final int DELAY = 0;
-    private static final int PERIOD = 300;
+    private static final int PERIOD = 1000 * 60;
 
     private List<Integer> listIDEdge;
 
@@ -179,15 +179,16 @@ public class RatingControl {
             long existingFlags = edgeIteratorState.getFlags();
             EdgeIterator iterBase = GraphHopperApplication.edgeExplorer.setBaseNode(queryResult.getClosestNode());
             List<Edge> edges = new ArrayList<>();
-            List<EdgeIterator> edgeIteratorList = new ArrayList<>();
+//            List<EdgeIterator> edgeIteratorList = new ArrayList<>();
             while (iterBase.next()) {
-                edgeIteratorList.add(iterBase);
+//                edgeIteratorList.add(iterBase);
                 Edge edge = new Edge();
                 edge.setId(iterBase.getEdge());
                 edge.setAdjustNode(iterBase.getAdjNode());
                 edge.setBaseNode(iterBase.getBaseNode());
                 edge.setDistance(iterBase.getDistance());
-                System.out.println(encoder.getSpeed(iterBase.getFlags()));
+                System.out.println("EdgeID: " + iterBase.getEdge());
+                System.out.println("Speed before change: " + encoder.getSpeed(iterBase.getFlags()));
                 //save speed
                 GraphHopperApplication.hashMapSpeed.put(iterBase.getEdge(), encoder.getSpeed(iterBase.getFlags()));
                 // set speed
@@ -210,17 +211,16 @@ public class RatingControl {
                         edge.setSpeed(0);
                         break;
                 }
-                System.out.println(encoder.getSpeed(iterBase.getFlags()));
-                System.out.println("aaaaaaaaaa: " + iterBase.getEdge());
+                System.out.println("Speed after change: " + encoder.getSpeed(iterBase.getFlags()));
                 listIDEdge.add(iterBase.getEdge());
                 edge.setPolyline(getPolylineBetween2Nodes(iterBase.getBaseNode(), iterBase.getAdjNode()));
                 edges.add(edge);
             }
-            for(int i=0; i<listIDEdge.size(); i++) {
+            for (int i = 0; i < listIDEdge.size(); i++) {
                 TimerManagement timerManagement = new TimerManagement(new Timer());
 //                timerManagement = setupTimer(timerManagement, iterBase, encoder, existingFlags);
                 int finalI = i;
-                if(GraphHopperApplication.hashMapDelay.get(listIDEdge.get(finalI)) != null) {
+                if (GraphHopperApplication.hashMapDelay.get(listIDEdge.get(finalI)) != null) {
                     GraphHopperApplication.hashMapDelay.get(listIDEdge.get(finalI)).getTimer().cancel();
                 }
                 GraphHopperApplication.hashMapDelay.put(listIDEdge.get(finalI), timerManagement);
@@ -232,13 +232,27 @@ public class RatingControl {
                         timerManagement.setInterval(timerManagement.getInterval() - 1);
                         System.out.println("id: " + listIDEdge.get(finalI) + " / time left: " + timerManagement.getInterval() + "\n");
                         if (timerManagement.getInterval() == 0) {
-                            System.out.println("id: " + listIDEdge.get(finalI) + " finish!");
-                            timerManagement.getTimer().cancel();
-                            GraphHopperApplication.hashMapDelay.remove(getKeyFromValue(GraphHopperApplication.hashMapDelay, timerManagement));
-                            edgeIteratorList.get(finalI).setFlags(encoder.setSpeed(edgeIteratorList.get(finalI).getFlags(), GraphHopperApplication.hashMapSpeed.get(edgeIteratorList.get(finalI).getEdge())));
-                            ratingDAO.updateEdge(edges.get(finalI), 0);
-                            System.out.println(encoder.getSpeed(edgeIteratorList.get(finalI).getFlags()));
-                            GraphHopperApplication.hashMapSpeed.remove(listIDEdge.get(finalI));
+                            EdgeIterator originIterator = GraphHopperApplication.edgeExplorer.setBaseNode(queryResult.getClosestNode());
+                            int idEdge = 0;
+                            System.out.println("id: " + (idEdge = listIDEdge.get(finalI)) + " finish!");
+                            GraphHopperApplication.hashMapDelay.get(idEdge).getTimer().cancel();
+                            GraphHopperApplication.hashMapDelay.remove(idEdge);
+                            while (originIterator.next()) {
+                                if (originIterator.getEdge() == idEdge) {
+                                    System.out.println("speedddd" + GraphHopperApplication.hashMapSpeed.get(idEdge));
+                                    originIterator.setFlags(encoder.setSpeed(originIterator.getFlags(), GraphHopperApplication.hashMapSpeed.get(idEdge)));
+                                    ratingDAO.updateEdge(findEdgeByIDEdge(edges, idEdge), 0);
+                                    System.out.println(idEdge + " has speed: " + encoder.getSpeed(originIterator.getFlags()));
+                                    GraphHopperApplication.hashMapSpeed.remove(listIDEdge.get(listIDEdge.indexOf(idEdge)));
+                                    if (GraphHopperApplication.hashMapSpeed.size() == 0) {
+                                        break;
+                                    }
+                                }
+                            }
+//                            edgeIteratorList.get(edgeIteratorList.indexOf(idEdge)).setFlags(encoder.setSpeed(edgeIteratorList.get(edgeIteratorList.indexOf(idEdge)).getFlags(), GraphHopperApplication.hashMapSpeed.get(edgeIteratorList.get(edgeIteratorList.indexOf(idEdge)).getEdge())));
+//                            ratingDAO.updateEdge(edges.get(edgeIteratorList.indexOf(idEdge)), 0);
+//                            System.out.println(edgeIteratorList.get(edgeIteratorList.indexOf(idEdge)).getEdge() + " has speed: " + encoder.getSpeed(edgeIteratorList.get(edgeIteratorList.indexOf(idEdge)).getFlags()));
+//                            GraphHopperApplication.hashMapSpeed.remove(listIDEdge.get(edgeIteratorList.indexOf(idEdge)));
                         }
                     }
                 }, DELAY, PERIOD);
@@ -276,5 +290,14 @@ public class RatingControl {
             return response;
         }
         return ratingDAO.insertAllEdges(rating);
+    }
+
+    private Edge findEdgeByIDEdge(List<Edge> edges, int id) {
+        for (Edge edge: edges) {
+            if (edge.getId() == id) {
+                return edge;
+            }
+        }
+        return null;
     }
 }
